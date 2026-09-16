@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fictional Records Viewer &mdash; Automated Exporter Demo</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; background: #f4f6f8; color: #1a2634; }
+  header { background: #1a2634; color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  header .badge { font-size: 11px; background: #c9a227; color: #1a1206; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+  .toolbar { display: flex; align-items: center; gap: 16px; padding: 14px 24px; background: #fff; border-bottom: 1px solid #e0e4e8; }
+  .toolbar .profile { font-size: 14px; }
+  .toolbar .profile span#subjectName { font-weight: 700; }
+  .toolbar select { padding: 6px 10px; border-radius: 6px; border: 1px solid #ccd3da; font-size: 13px; }
+  .toolbar button { padding: 7px 14px; border-radius: 6px; border: 1px solid #ccd3da; background: #fff; cursor: pointer; font-size: 13px; }
+  .toolbar button:hover { background: #f0f2f4; }
+  main { max-width: 780px; margin: 24px auto; background: #fff; border: 1px solid #e0e4e8; border-radius: 8px; padding: 28px 32px; min-height: 420px; }
+  main h2 { margin-top: 0; font-size: 18px; }
+  main p { line-height: 1.6; color: #33404d; }
+  .note-meta { color: #7a8794; font-size: 12px; margin-bottom: 18px; }
+  footer { max-width: 780px; margin: 0 auto 40px; font-size: 12px; color: #7a8794; text-align: center; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Fictional Records Portal</h1>
+    <span class="badge">DEMO &mdash; NO REAL DATA</span>
+  </header>
+
+  <div class="toolbar">
+    <div class="profile">Subject: <span id="subjectName">Jordan Rivers</span></div>
+    <label>Jump to page:
+      <select id="pageJumpSelect" onchange="goToPage(this.value)"></select>
+    </label>
+    <button id="printAllBtn" onclick="printCurrentPage()">Print This Page</button>
+  </div>
+
+  <main id="recordBody">
+    <!-- filled by script -->
+  </main>
+
+  <footer>
+    This is a fabricated demo site built to demonstrate a Chrome extension
+    technique (auto-paginate + export to PDF). No real person, organization,
+    or records are represented here.
+  </footer>
+
+<script>
+  const TOTAL_PAGES = 5;
+  let currentPage = 1;
+
+  const RECORD_TEXT = [
+    "Subject attended scheduled session. Reported stable mood and adherence to care plan. No acute concerns raised during the visit.",
+    "Follow-up check-in completed by phone. Subject confirmed medication pickup and expressed interest in additional community resources.",
+    "In-person visit at the day center. Subject participated in group activity and discussed upcoming housing appointment.",
+    "Care coordinator reviewed progress toward quarterly goals with subject. Two of three goals marked on track; one goal revised.",
+    "Final session of the reporting period. Summary discussed with subject; next review scheduled for the following quarter."
+  ];
+
+  function render() {
+    document.getElementById("recordBody").innerHTML = `
+      <div class="note-meta">Record ${currentPage} of ${TOTAL_PAGES} &middot; Fictional Records Portal (demo)</div>
+      <h2>Progress Note &mdash; Entry ${currentPage}</h2>
+      <p>${RECORD_TEXT[currentPage - 1]}</p>
+    `;
+  }
+
+  function buildSelect() {
+    const sel = document.getElementById("pageJumpSelect");
+    sel.innerHTML = "";
+    for (let i = 1; i <= TOTAL_PAGES; i++) {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = `Page ${i}`;
+      sel.appendChild(opt);
+    }
+    sel.value = String(currentPage);
+  }
+
+  function goToPage(n) {
+    currentPage = parseInt(n, 10);
+    render();
+  }
+
+  // Mirrors the pattern of a real multi-page app: printing opens a
+  // separate, named browser window containing a print-friendly view
+  // of just the current page's content.
+  function printCurrentPage() {
+    const win = window.open("", "recordsPrintWindow", "width=800,height=1000");
+    win.document.open();
+    win.document.write(`
+      <!DOCTYPE html><html><head><title>Print - Record ${currentPage}</title>
+      <style>body{font-family:sans-serif;padding:40px;color:#1a2634;}
+      h2{margin-top:0;} .meta{color:#7a8794;font-size:12px;margin-bottom:16px;}</style>
+      </head><body>
+        <div class="meta">Subject: ${document.getElementById("subjectName").textContent} &middot; Record ${currentPage} of ${TOTAL_PAGES}</div>
+        <h2>Progress Note &mdash; Entry ${currentPage}</h2>
+        <p>${RECORD_TEXT[currentPage - 1]}</p>
+      </body></html>
+    `);
+    win.document.close();
+  }
+
+  buildSelect();
+  render();
+</script>
+</body>
+</html>

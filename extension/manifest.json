@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Automated Exporter (Demo)",
+  "version": "1.0",
+  "description": "Demo extension: auto-paginates through a web app and exports every page as PDF.",
+  "author": "Abdullah Dursun (https://www.linkedin.com/in/abdullah-dursun41)",
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": ["https://bydursun.github.io/automated-exporter/*"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Export Pages to PDF",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://bydursun.github.io/automated-exporter/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["lib/html2canvas.min.js", "lib/jspdf.umd.min.js"],
+      "matches": ["https://bydursun.github.io/automated-exporter/*"]
+    }
+  ]
+}
