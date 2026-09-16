@@ -11,6 +11,8 @@
   .client { background: #16263b; border: 1px solid #21384f; border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 14px; }
   .client .label { color: #8aa0b8; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
   .client .value { font-weight: 600; margin-top: 2px; word-break: break-word; }
+  .toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 14px; cursor: pointer; user-select: none; }
+  .toggle input { width: 16px; height: 16px; accent-color: #0d6efd; cursor: pointer; }
   button { width: 100%; padding: 11px; border: none; border-radius: 8px; background: #c9a227; color: #1a1206; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; }
   button:hover:not(:disabled) { background: #d8b43a; }
   button:disabled { background: #3a4658; color: #7e8da0; cursor: not-allowed; }
@@ -37,6 +39,10 @@
       <div class="label">Subject</div>
       <div class="value" id="clientName">Checking page&hellip;</div>
     </div>
+    <label class="toggle">
+      <input type="checkbox" id="combineChk" checked>
+      <span>Combine all pages into one PDF</span>
+    </label>
     <button id="startBtn" disabled>Start Export</button>
     <div class="progress-wrap" id="progressWrap">
       <div class="bar"><div class="bar-fill" id="barFill"></div></div>

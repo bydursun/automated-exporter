@@ -10,6 +10,7 @@
 
 const startBtn = document.getElementById("startBtn");
 const clientName = document.getElementById("clientName");
+const combineChk = document.getElementById("combineChk");
 const progressWrap = document.getElementById("progressWrap");
 const barFill = document.getElementById("barFill");
 const count = document.getElementById("count");
@@ -46,7 +47,7 @@ function detectPage() {
   return { subject, total };
 }
 
-function runExport(html2canvasUrl, jspdfUrl) {
+function runExport(combined, html2canvasUrl, jspdfUrl) {
   (async () => {
     const send = (obj) => { try { window.postMessage({ __pdfExport: obj }, "*"); } catch (e) {} };
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -89,6 +90,61 @@ function runExport(html2canvasUrl, jspdfUrl) {
       try { return pw.document.body.innerText.trim(); } catch (e) { return prev; }
     }
 
+    // ============ MODE A: one combined, selectable PDF via browser print ============
+    if (combined) {
+      send({ type: "LOG", text: `Scanning ${SUBJECT} (${TOTAL} pages)` });
+      const bodyParts = [];
+      let prevTextA = "";
+      for (let page = 1; page <= TOTAL; page++) {
+        goToPage(String(page));
+        await wait(400);
+        document.getElementById("printAllBtn").click();
+        await wait(300);
+
+        const pw = window.open("", "recordsPrintWindow");
+        if (!pw) { send({ type: "ERROR", text: "Could not get print window" }); return; }
+        prevTextA = await waitForContent(pw, prevTextA);
+
+        const b = pw.document.body.cloneNode(true);
+        b.querySelectorAll("script,button,input,iframe,noscript").forEach((e) => e.remove());
+        bodyParts.push(b.innerHTML);
+        send({ type: "PROGRESS", page, total: TOTAL });
+      }
+
+      const pw = window.open("", "recordsPrintWindow");
+      if (!pw) { send({ type: "ERROR", text: "Print window unavailable" }); return; }
+
+      let headHTML = "";
+      try {
+        pw.document.querySelectorAll('head link[rel="stylesheet"], head style').forEach((el) => { headHTML += el.outerHTML; });
+      } catch (e) {}
+
+      let bodyHTML = "";
+      bodyParts.forEach((b, i) => {
+        bodyHTML += `<div${i > 0 ? ' style="page-break-before:always;"' : ""}>${b}</div>`;
+      });
+
+      const docHTML =
+        `<!DOCTYPE html><html><head><title>${SUBJECT} - ${ymd}</title>${headHTML}` +
+        `<style>@media print{body{margin:0;}}</style></head><body>${bodyHTML}</body></html>`;
+
+      try {
+        pw.document.open();
+        pw.document.write(docHTML);
+        pw.document.close();
+      } catch (e) { send({ type: "ERROR", text: "Could not assemble pages: " + e.message }); return; }
+
+      await wait(500);
+      send({ type: "LOG", text: "Opening print dialog — choose “Save as PDF”" });
+      try {
+        pw.focus();
+        pw.print();
+      } catch (e) { send({ type: "ERROR", text: "Print failed: " + e.message }); return; }
+      send({ type: "DONE" });
+      return;
+    }
+
+    // ============ MODE B: separate files, fully automatic (image) ============
     send({ type: "LOG", text: `Exporting ${SUBJECT} (${TOTAL} pages)` });
     let prevText = "";
 
@@ -154,6 +210,7 @@ async function init() {
 
 startBtn.addEventListener("click", async () => {
   const tab = await getActiveTab();
+  const combined = combineChk.checked;
   startBtn.disabled = true;
   startBtn.textContent = "Exporting…";
   progressWrap.style.display = "block";
@@ -162,7 +219,7 @@ startBtn.addEventListener("click", async () => {
     target: { tabId: tab.id },
     world: "MAIN",
     func: runExport,
-    args: [chrome.runtime.getURL("lib/html2canvas.min.js"), chrome.runtime.getURL("lib/jspdf.umd.min.js")],
+    args: [combined, chrome.runtime.getURL("lib/html2canvas.min.js"), chrome.runtime.getURL("lib/jspdf.umd.min.js")],
   });
 });
 
